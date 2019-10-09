@@ -34,6 +34,7 @@ class ClassDataset(Dataset):
         self.i2w = {} # index to word
 
         self.batch_size = 1
+        self.test_mode_flag = 0
         if (hasattr(args, "batch_size") == True):
             self.batch_size = args.batch_size
         self.batch_pos = 0
@@ -57,8 +58,9 @@ class ClassDataset(Dataset):
             raise ValueError
 
         if (os.path.exists(self.tgtfile)==0):
-            print ("data file not found!")
-            raise ValueError
+            self.test_mode_flag = 1
+            print ("tgt file not found")
+            print ("test mode begins")
 
         if (os.path.exists(self.dictfile)==0):
             print ("dict file not found!")
@@ -74,14 +76,29 @@ class ClassDataset(Dataset):
                 self.w2i[word] = i # these two lines are important ..
                 self.i2w[i] = word
 
-        with open(self.srcfile, "r") as f1:
-            with open(self.tgtfile, "r") as f2:
+        if (self.test_mode_flag == 0):
+            with open(self.srcfile, "r") as f1:
+                with open(self.tgtfile, "r") as f2:
+                    src_lines = f1.readlines()
+                    tgt_lines = f2.readlines()
+                    self.data_size = len(src_lines)
+                    for i, (src_line, tgt_line) in enumerate(zip(src_lines, tgt_lines)):
+                        src_line_idx = self._sentence2idx(src_line)
+                        tgt_line = [int(num) for num in tgt_line.strip().split(' ')]
+                        if (self.max_len > 0 and len(src_line_idx) > self.max_len):
+                            src_line_idx = src_line_idx[-self.max_len:]
+                            tgt_line = tgt_line[-self.max_len:]
+
+                        self.target.append(tgt_line)
+                        self.sentence.append(src_line)
+                        self.source.append(src_line_idx)
+        elif (self.test_mode_flag == 1):
+            with open(self.srcfile, "r") as f1:
                 src_lines = f1.readlines()
-                tgt_lines = f2.readlines()
                 self.data_size = len(src_lines)
-                for i, (src_line, tgt_line) in enumerate(zip(src_lines, tgt_lines)):
+                for i, src_line in enumerate(src_lines):
                     src_line_idx = self._sentence2idx(src_line)
-                    tgt_line = [int(num) for num in tgt_line.strip().split(' ')]
+                    tgt_line = [0 for num in range(len(src_line_idx))]
                     if (self.max_len > 0 and len(src_line_idx) > self.max_len):
                         src_line_idx = src_line_idx[-self.max_len:]
                         tgt_line = tgt_line[-self.max_len:]
@@ -123,7 +140,7 @@ class ClassDataset(Dataset):
         self.source, self.target = shuffle(self.source, self.target)
 
     def get_batch(self):
-        while (self.batch_pos + self.batch_size < self.data_size):
+        while (self.batch_pos + self.batch_size <= self.data_size):
             batch_sentence = self.sentence[self.batch_pos: self.batch_pos + self.batch_size]
             batch_source = self.source[self.batch_pos: self.batch_pos + self.batch_size]
             batch_target = self.target[self.batch_pos: self.batch_pos + self.batch_size]
