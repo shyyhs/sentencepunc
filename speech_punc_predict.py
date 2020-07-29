@@ -78,6 +78,7 @@ print (args)
 
 test_dataset = ClassDataset(args.speech_path, args.speech_num, args.vocab_path, args)
 print ("dataset loaded")
+
 encoder = LSTMEncoder(test_dataset.dict_size , args)
 decoder = LinearDecoder(args)
 

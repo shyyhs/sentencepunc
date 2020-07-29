@@ -173,6 +173,7 @@ def train(encoder, decoder, train_dataset, dev_dataset, args):
 
 args = parser_init()
 print (args)
+
 train_dataset = ClassDataset(args.train_path, args.train_num, args.vocab_path, args)
 dev_dataset = ClassDataset(args.dev_path, args.dev_num, args.vocab_path, args)
 encoder = LSTMEncoder(train_dataset.dict_size , args)
